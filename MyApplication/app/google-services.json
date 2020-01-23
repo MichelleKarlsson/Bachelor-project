@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "867295685929",
+    "firebase_url": "https://bachelorproject-2c15a.firebaseio.com",
+    "project_id": "bachelorproject-2c15a",
+    "storage_bucket": "bachelorproject-2c15a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:867295685929:android:55fd6d711d7027f9911b38",
+        "android_client_info": {
+          "package_name": "android.mnah"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "867295685929-eug8kelr6qh9s0unde43066t72h78po5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD55CncVfeqn6Zt03x3LlYSovQaLZxjfX4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "867295685929-eug8kelr6qh9s0unde43066t72h78po5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
