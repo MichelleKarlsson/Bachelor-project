@@ -5,9 +5,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Point;
 
+import com.google.firebase.ml.vision.common.FirebaseVisionImage;
+
 public class PictureUtils {
 
-    //This class found in "Android Programming The Big Nerd Ranch Guide third edition - Phillips, B., Stewart, C., Marsicano, K.
+    //Contents from this class found in "Android Programming The Big Nerd Ranch Guide third edition - Phillips, B., Stewart, C., Marsicano, K. (modified)
 
     public static Bitmap getScaledBitmap(String path, int destWidth, int destHeight) {
         BitmapFactory.Options opts = new BitmapFactory.Options();
@@ -37,4 +39,6 @@ public class PictureUtils {
 
         return getScaledBitmap(path, size.x, size.y);
     }
+
+
 }

@@ -44,13 +44,30 @@
 
         <TextView
             android:layout_width="350dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="50dp"
+            android:layout_height="250dp"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="20dp"
             android:layout_gravity="center_horizontal"
             android:background="@color/colorPrimaryDark"
-            android:textColor="@color/white"
-            android:text="hello world"
             android:id="@+id/summarytext"/>
+
+        <!--<androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="350dp"
+            android:layout_height="250dp"
+            android:layout_marginBottom="20dp"
+            android:layout_marginTop="20dp"
+            android:layout_gravity="center_horizontal"
+            android:background="@color/colorPrimaryDark"
+            android:id="@+id/list_container"></androidx.constraintlayout.widget.ConstraintLayout>-->
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/button_rounded"
+            android:textColor="@color/white"
+            android:id="@+id/describe_button"
+            android:text="@string/describe_button"
+            android:layout_marginBottom="10dp"/>
 
     </androidx.appcompat.widget.LinearLayoutCompat>
 
