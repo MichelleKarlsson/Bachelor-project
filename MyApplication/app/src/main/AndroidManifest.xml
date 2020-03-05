@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="android.mnah">
-
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -28,10 +28,6 @@
                 android:resource="@xml/files" />
         </provider>
 
-        <meta-data
-            android:name="com.google.firebase.ml.vision.DEPENDENCIES"
-            android:value="label"> <!-- Download the ML model as the application is downloaded. -->
-        </meta-data>
     </application>
 
 </manifest>

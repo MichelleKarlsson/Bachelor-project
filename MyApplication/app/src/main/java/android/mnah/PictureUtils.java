@@ -3,10 +3,8 @@ package android.mnah;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Point;
-
-import com.google.firebase.ml.vision.common.FirebaseVisionImage;
-
 public class PictureUtils {
 
     //Contents from this class found in "Android Programming The Big Nerd Ranch Guide third edition - Phillips, B., Stewart, C., Marsicano, K. (modified)

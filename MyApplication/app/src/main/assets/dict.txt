@@ -1,0 +1,8 @@
+laptop-dell
+phone-android-black
+phone-iphone-black
+phone-iphone-white
+laptop-apple
+laptop-acer
+phone-android-white
+laptop-lenovo

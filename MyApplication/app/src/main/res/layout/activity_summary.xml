@@ -42,12 +42,14 @@
                 android:layout_gravity="center_horizontal"
                 android:id="@+id/picture_button"/>
 
+        <!--TODO: Make this scrollable, just in case-->>
         <TextView
             android:layout_width="350dp"
             android:layout_height="250dp"
             android:layout_marginBottom="20dp"
             android:layout_marginTop="20dp"
             android:layout_gravity="center_horizontal"
+            android:textColor="@color/white"
             android:background="@color/colorPrimaryDark"
             android:id="@+id/summarytext"/>
 

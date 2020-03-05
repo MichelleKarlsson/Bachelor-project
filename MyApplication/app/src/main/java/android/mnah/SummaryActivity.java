@@ -2,18 +2,16 @@ package android.mnah;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.content.FileProvider;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Point;
 import android.net.Uri;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -22,16 +20,25 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.FirebaseApiNotAvailableException;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.ml.common.FirebaseMLException;
+import com.google.firebase.ml.common.modeldownload.FirebaseModelDownloadConditions;
+import com.google.firebase.ml.common.modeldownload.FirebaseModelManager;
 import com.google.firebase.ml.vision.FirebaseVision;
+import com.google.firebase.ml.vision.automl.FirebaseAutoMLLocalModel;
+import com.google.firebase.ml.vision.automl.FirebaseAutoMLRemoteModel;
 import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
+import com.google.firebase.ml.vision.label.FirebaseVisionOnDeviceAutoMLImageLabelerOptions;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 public class SummaryActivity extends AppCompatActivity {
@@ -45,7 +52,12 @@ public class SummaryActivity extends AppCompatActivity {
     private ImageButton mPictureButton;
     private TextView mSummaryText;
     private Button mDescribeButton;
-    private List<FirebaseVisionImageLabel> labels;
+
+    private FirebaseAutoMLRemoteModel remoteModel;
+    private FirebaseAutoMLLocalModel localModel;
+    private FirebaseVisionImageLabeler labeler;
+    private Bitmap bmp;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +68,6 @@ public class SummaryActivity extends AppCompatActivity {
         mContext = getApplicationContext();
         mPicture = new Picture();
         mPictureFile = getPictureFile(mPicture);
-
 
         mSummaryText = findViewById(R.id.summarytext);
         mImageView = findViewById(R.id.imageview);
@@ -78,32 +89,57 @@ public class SummaryActivity extends AppCompatActivity {
         });
         updateImageView();
 
+
+        //Initialize the remote ML model:
+        remoteModel = new FirebaseAutoMLRemoteModel.Builder("Devices_202022792454").build();
+
+        FirebaseModelDownloadConditions conditions = new FirebaseModelDownloadConditions.Builder()
+                .build(); //add .requireWifi() before build here
+        FirebaseModelManager.getInstance().download(remoteModel,conditions)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        System.out.println("Download of model successful");
+                    }
+                });
+
+        //Initialize the local ML model:
+        localModel = new FirebaseAutoMLLocalModel.Builder().setAssetFilePath("manifest.json").build();
+
+        System.out.println("********************** Some kind of model has been initialized");
+        makeLabeler();
+
     }
 
-    public List<FirebaseVisionImageLabel> runImageLabeler(FirebaseVisionImage image) {
 
-        FirebaseVisionImageLabeler labeler = FirebaseVision.getInstance().getOnDeviceImageLabeler();
+    private void makeLabeler() {
 
-        labeler.processImage(image).addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
+        FirebaseModelManager.getInstance().isModelDownloaded(remoteModel).addOnSuccessListener(new OnSuccessListener<Boolean>() {
             @Override
-            public void onSuccess(List<FirebaseVisionImageLabel> firebaseVisionImageLabels) {
-
-                for (FirebaseVisionImageLabel fl : firebaseVisionImageLabels) {
-                    mSummaryText.append(fl.getText() + "\n");
-                    mSummaryText.append((fl.getConfidence() * 100) + "%\n\n");
+            public void onSuccess(Boolean downloaded) {
+                FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder optionsBuilder;
+                if (downloaded) {
+                    optionsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(remoteModel);
+                    System.out.println("*************** remote labeler");
+                } else {
+                    optionsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(localModel);
+                    System.out.println("************* local labeler");
                 }
+                FirebaseVisionOnDeviceAutoMLImageLabelerOptions options = optionsBuilder
+                        .setConfidenceThreshold(0.5f)
+                        .build();
 
-            }
-
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.e("Labeling", "Detection failed", e);
+                try {
+                    labeler = FirebaseVision.getInstance().getOnDeviceAutoMLImageLabeler(options);
+                } catch (FirebaseMLException e) {
+                    Log.e("Labeler", "Labeler init failed", e);
+                }
             }
         });
 
-        return labels;
+        System.out.println("**************** Labeler has been initialized");
     }
+
 
 
     private void takePicture() {
@@ -130,27 +166,107 @@ public class SummaryActivity extends AppCompatActivity {
                 if (resultCode == RESULT_OK) {
                     updateImageView();
                     this.revokeUriPermission(mUri, Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
                 }
                 break;
         }
     }
 
 
+
     private void updateImageView() {
         if (mPictureFile == null || !mPictureFile.exists()) {
             mImageView.setImageDrawable(null);
         } else {
-            Bitmap bmp = PictureUtils.getScaledBitmap(mPictureFile.getPath(), this);
-            mImageView.setImageBitmap(bmp);
             mSummaryText.setText("");
+            bmp = PictureUtils.getScaledBitmap(mPictureFile.getPath(), this);
+            mImageView.setImageBitmap(bmp);
+            FirebaseVisionImage img = FirebaseVisionImage.fromBitmap(bmp);
+            detectImage(img);
+            //runOnImage();
 
-            FirebaseVisionImage image = mPicture.getVisionImage(bmp);
-            runImageLabeler(image);
-
-
+            System.out.println("******************* updateImageView()");
         }
     }
 
+    /*private void runOnImage() {
+        FirebaseVisionImage img = FirebaseVisionImage.fromBitmap(bmp);
+        labeler.processImage(img).addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
+            @Override
+            public void onSuccess(List<FirebaseVisionImageLabel> firebaseVisionImageLabels) {
+                for (FirebaseVisionImageLabel label : firebaseVisionImageLabels) {
+                    System.out.println("********************* A label: " + label);
+                    String text = label.getText();
+                    float conf = label.getConfidence();
+                    mSummaryText.append(text + " " + conf + "\n");
+                }
+                System.out.println("************************ runOnImage successful");
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("runOnImage()", "Model failed", e);
+            }
+        });
+    }*/
+
+    protected Task<List<FirebaseVisionImageLabel>> detectImage(final FirebaseVisionImage img) {
+        return labeler.processImage(img).addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
+            @Override
+            public void onSuccess(List<FirebaseVisionImageLabel> firebaseVisionImageLabels) {
+                //TODO: Find out how to alert the user if no label was found
+                for (FirebaseVisionImageLabel lab : firebaseVisionImageLabels) {
+                    System.out.println(String.format("Label: %s, Confidence: %4.2f", lab.getText(), lab.getConfidence()));
+                    System.out.println(String.format("Label: %s, Confidence: %4.2f", lab.getText(), lab.getConfidence()));
+                    createDescription(lab);
+                }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("Detection error", "Exception occurred while trying to run model on image", e);
+            }
+        });
+    }
+
+    public void createDescription(FirebaseVisionImageLabel label) {
+        String[] parts;
+        String article = "";
+        String description;
+        String type;
+        String brand;
+        String color = "";
+        String entity = label.getText();
+
+        //Split the label into it's parts: type (laptop/phone), brand and if phone then also color
+        parts = entity.split("-");
+        type = parts[0];
+        brand = parts[1];
+
+        if (type.equals("phone")) {
+            color = parts[2];
+            article = "a"; //because the two possible colors both start with a consonant.
+        } else {
+            String[] vowels = new String[] {"a","e","i","o","u","y"};
+            for (int i = 0; i < vowels.length; i++) {
+                if (brand.startsWith(vowels[i])) {
+                    article = "an";
+                } else {
+                    article = "a";
+                }
+            }
+
+        }
+
+
+        if (type.equals("phone")) {
+            description = "This is " + article + " " + color + " " + brand + " " + type;
+        } else {
+            description = "This is " + article + " " + brand + " " + type;
+        }
+
+        mSummaryText.setText(description + " (Confidence: " + (label.getConfidence() * 100 + "%") + ")");
+    }
 
     public File getPictureFile(Picture pic){
             File filesDir = mContext.getFilesDir();

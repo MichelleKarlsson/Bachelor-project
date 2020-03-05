@@ -1,10 +1,21 @@
 package android.mnah;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.ml.common.modeldownload.FirebaseModelDownloadConditions;
+import com.google.firebase.ml.common.modeldownload.FirebaseModelManager;
+import com.google.firebase.ml.common.modeldownload.FirebaseRemoteModel;
+import com.google.firebase.ml.vision.automl.FirebaseAutoMLLocalModel;
+import com.google.firebase.ml.vision.automl.FirebaseAutoMLRemoteModel;
+
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -42,6 +53,9 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+
+
     }
 
 
