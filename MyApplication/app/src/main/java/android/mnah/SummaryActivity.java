@@ -3,6 +3,8 @@ package android.mnah;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
+import simplenlg.framework.NLGElement;
+import simplenlg.phrasespec.SPhraseSpec;
 
 import android.content.Context;
 import android.content.Intent;
@@ -36,6 +38,12 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
 import com.google.firebase.ml.vision.label.FirebaseVisionOnDeviceAutoMLImageLabelerOptions;
+
+import simplenlg.framework.*;
+import simplenlg.lexicon.*;
+import simplenlg.realiser.english.*;
+import simplenlg.phrasespec.*;
+import simplenlg.features.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -217,7 +225,6 @@ public class SummaryActivity extends AppCompatActivity {
                 //TODO: Find out how to alert the user if no label was found
                 for (FirebaseVisionImageLabel lab : firebaseVisionImageLabels) {
                     System.out.println(String.format("Label: %s, Confidence: %4.2f", lab.getText(), lab.getConfidence()));
-                    System.out.println(String.format("Label: %s, Confidence: %4.2f", lab.getText(), lab.getConfidence()));
                     createDescription(lab);
                 }
             }
@@ -230,7 +237,7 @@ public class SummaryActivity extends AppCompatActivity {
     }
 
     public void createDescription(FirebaseVisionImageLabel label) {
-        String[] parts;
+        /*String[] parts;
         String article = "";
         String description;
         String type;
@@ -266,6 +273,45 @@ public class SummaryActivity extends AppCompatActivity {
         }
 
         mSummaryText.setText(description + " (Confidence: " + (label.getConfidence() * 100 + "%") + ")");
+        */
+
+        //NLGElement s1 = SimpleNLG.getFactory().createSentence("i am happy");
+
+        SimpleNLG simpleNLG = new SimpleNLG();
+        String entity = label.getText();
+        String[] parts = entity.split("-"); //the categories: parts[0] = laptop/phone, parts[1] = brand, parts[2] = color (only phones)
+        SPhraseSpec s1 = simpleNLG.getFactory().createClause();
+
+        //create initial sentence, make it present tense and start it with "This is.."
+        s1.setFeature(Feature.TENSE, Tense.PRESENT);
+        s1.setSubject("This");
+        s1.setVerb("be");
+        //Look up the words identified in the lexicon
+        WordElement brand = simpleNLG.getLexicon().getWord(parts[1]);
+        WordElement type = simpleNLG.getLexicon().getWord(parts[0]);
+        String brandword = simpleNLG.getRealiser().realise(brand).getRealisation();
+        String brandcap = brandword.substring(0,1).toUpperCase() + brandword.substring(1);
+        String typeword = simpleNLG.getRealiser().realise(type).getRealisation();
+
+        switch (parts[0]) {
+            case "laptop":
+                NPPhraseSpec item = simpleNLG.getFactory().createNounPhrase(brandcap + " " + typeword);
+                item.setDeterminer("a");
+                s1.addComplement(item);
+                break;
+            case "phone":
+                WordElement color = simpleNLG.getLexicon().getWord(parts[2]);
+                String colorString = simpleNLG.getRealiser().realise(color).getRealisation();
+                NPPhraseSpec phoneitem = simpleNLG.getFactory().createNounPhrase(colorString + " " + brandcap + " " + typeword);
+                phoneitem.setDeterminer("a");
+                s1.addComplement(phoneitem);
+                break;
+            default:
+                break;
+        }
+
+        String output = simpleNLG.getRealiser().realiseSentence(s1);
+        mSummaryText.setText(output);
     }
 
     public File getPictureFile(Picture pic){
