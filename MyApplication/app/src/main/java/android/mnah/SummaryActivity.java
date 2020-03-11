@@ -3,16 +3,14 @@ package android.mnah;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.FileProvider;
-import simplenlg.framework.NLGElement;
-import simplenlg.phrasespec.SPhraseSpec;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.graphics.Point;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -22,7 +20,6 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -39,17 +36,12 @@ import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
 import com.google.firebase.ml.vision.label.FirebaseVisionOnDeviceAutoMLImageLabelerOptions;
 
-import simplenlg.framework.*;
-import simplenlg.lexicon.*;
-import simplenlg.realiser.english.*;
-import simplenlg.phrasespec.*;
-import simplenlg.features.*;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
-public class SummaryActivity extends AppCompatActivity {
+public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragment.SendData {
 
 
     private Context mContext;
@@ -59,13 +51,31 @@ public class SummaryActivity extends AppCompatActivity {
     private ImageView mImageView;
     private ImageButton mPictureButton;
     private TextView mSummaryText;
-    private Button mDescribeButton;
+    private Button mNextButton;
+
+    private int price;
+    private String condition;
 
     private FirebaseAutoMLRemoteModel remoteModel;
     private FirebaseAutoMLLocalModel localModel;
     private FirebaseVisionImageLabeler labeler;
     private Bitmap bmp;
 
+
+
+    @Override
+    public void setCondition(String condition) {
+        this.condition = condition;
+        System.out.println("***************************************** condition: " + condition);
+
+    }
+
+    @Override
+    public void setPrice(int price) {
+        this.price = price;
+        System.out.println("***************************************** price: " + price);
+
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +87,8 @@ public class SummaryActivity extends AppCompatActivity {
         mPicture = new Picture();
         mPictureFile = getPictureFile(mPicture);
 
+        mNextButton = findViewById(R.id.next_button);
+        mNextButton.setEnabled(false);
         mSummaryText = findViewById(R.id.summarytext);
         mImageView = findViewById(R.id.imageview);
         mPictureButton = findViewById(R.id.picture_button);
@@ -87,14 +99,7 @@ public class SummaryActivity extends AppCompatActivity {
             }
         });
 
-        mDescribeButton = findViewById(R.id.describe_button);
-        mDescribeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                updateImageView();
 
-            }
-        });
         updateImageView();
 
 
@@ -114,7 +119,6 @@ public class SummaryActivity extends AppCompatActivity {
         //Initialize the local ML model:
         localModel = new FirebaseAutoMLLocalModel.Builder().setAssetFilePath("manifest.json").build();
 
-        System.out.println("********************** Some kind of model has been initialized");
         makeLabeler();
 
     }
@@ -128,10 +132,8 @@ public class SummaryActivity extends AppCompatActivity {
                 FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder optionsBuilder;
                 if (downloaded) {
                     optionsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(remoteModel);
-                    System.out.println("*************** remote labeler");
                 } else {
                     optionsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(localModel);
-                    System.out.println("************* local labeler");
                 }
                 FirebaseVisionOnDeviceAutoMLImageLabelerOptions options = optionsBuilder
                         .setConfidenceThreshold(0.5f)
@@ -145,7 +147,6 @@ public class SummaryActivity extends AppCompatActivity {
             }
         });
 
-        System.out.println("**************** Labeler has been initialized");
     }
 
 
@@ -191,32 +192,10 @@ public class SummaryActivity extends AppCompatActivity {
             mImageView.setImageBitmap(bmp);
             FirebaseVisionImage img = FirebaseVisionImage.fromBitmap(bmp);
             detectImage(img);
-            //runOnImage();
 
-            System.out.println("******************* updateImageView()");
         }
     }
 
-    /*private void runOnImage() {
-        FirebaseVisionImage img = FirebaseVisionImage.fromBitmap(bmp);
-        labeler.processImage(img).addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
-            @Override
-            public void onSuccess(List<FirebaseVisionImageLabel> firebaseVisionImageLabels) {
-                for (FirebaseVisionImageLabel label : firebaseVisionImageLabels) {
-                    System.out.println("********************* A label: " + label);
-                    String text = label.getText();
-                    float conf = label.getConfidence();
-                    mSummaryText.append(text + " " + conf + "\n");
-                }
-                System.out.println("************************ runOnImage successful");
-            }
-        }).addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception e) {
-                Log.e("runOnImage()", "Model failed", e);
-            }
-        });
-    }*/
 
     protected Task<List<FirebaseVisionImageLabel>> detectImage(final FirebaseVisionImage img) {
         return labeler.processImage(img).addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
@@ -237,46 +216,10 @@ public class SummaryActivity extends AppCompatActivity {
     }
 
     public void createDescription(FirebaseVisionImageLabel label) {
-        /*String[] parts;
-        String article = "";
-        String description;
-        String type;
-        String brand;
-        String color = "";
-        String entity = label.getText();
-
-        //Split the label into it's parts: type (laptop/phone), brand and if phone then also color
-        parts = entity.split("-");
-        type = parts[0];
-        brand = parts[1];
-
-        if (type.equals("phone")) {
-            color = parts[2];
-            article = "a"; //because the two possible colors both start with a consonant.
-        } else {
-            String[] vowels = new String[] {"a","e","i","o","u","y"};
-            for (int i = 0; i < vowels.length; i++) {
-                if (brand.startsWith(vowels[i])) {
-                    article = "an";
-                } else {
-                    article = "a";
-                }
-            }
-
-        }
-
-
-        if (type.equals("phone")) {
-            description = "This is " + article + " " + color + " " + brand + " " + type;
-        } else {
-            description = "This is " + article + " " + brand + " " + type;
-        }
-
-        mSummaryText.setText(description + " (Confidence: " + (label.getConfidence() * 100 + "%") + ")");
-        */
 
         //NLGElement s1 = SimpleNLG.getFactory().createSentence("i am happy");
 
+        /*
         SimpleNLG simpleNLG = new SimpleNLG();
         String entity = label.getText();
         String[] parts = entity.split("-"); //the categories: parts[0] = laptop/phone, parts[1] = brand, parts[2] = color (only phones)
@@ -311,8 +254,31 @@ public class SummaryActivity extends AppCompatActivity {
         }
 
         String output = simpleNLG.getRealiser().realiseSentence(s1);
-        mSummaryText.setText(output);
+        mSummaryText.setText(output);*/
+
+        final String entity = label.getText();
+        String[] parts = entity.split("-");
+        switch (parts[0]) {
+            case "phone" :
+                mSummaryText.setText("Is this a " + parts[2] + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
+                break;
+            case "laptop":
+                mSummaryText.setText("Is this a " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
+        }
+
+        mNextButton.setEnabled(true);
+        mNextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                FragmentManager fm = getSupportFragmentManager();
+                Fragment fragment = new ExtraInfoFragment();
+                fm.beginTransaction().add(R.id.container_summary, fragment).addToBackStack("extrainfo").commit();
+            }
+        });
+
     }
+
 
     public File getPictureFile(Picture pic){
             File filesDir = mContext.getFilesDir();

@@ -2,7 +2,17 @@
     <string name="app_name">My Application</string>
     <string name="start_button">Start</string>
     <string name="about_button">About</string>
-    <string name="describe_button">Describe</string>
+    <string name="next_button">Next</string>
+    <string name="condition">Condition</string>
+    <string name="asking_price">Asking price</string>
+    <string name="back_button">Done</string>
+
+    <string-array name="item_conditions">
+        <item>Like new</item>
+        <item>Good</item>
+        <item>Refurbished</item>
+        <item>Used</item>
+    </string-array>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

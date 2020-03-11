@@ -5,13 +5,13 @@ android {
     compileSdkVersion 28
     defaultConfig {
         applicationId "android.mnah"
-        minSdkVersion 19
+        minSdkVersion 28
         targetSdkVersion 28
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
-                noCompress "tflite" //this is for the ML model
+            noCompress "tflite" //this is for the ML model
         }
     }
     buildTypes {
