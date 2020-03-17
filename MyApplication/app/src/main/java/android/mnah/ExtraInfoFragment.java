@@ -84,8 +84,8 @@ public class ExtraInfoFragment extends Fragment {
                     price = Integer.parseInt(mPrice.getText().toString());
                 }
 
-                sendData.setCondition(condition);
                 sendData.setPrice(price);
+                sendData.setCondition(condition);
                 getParentFragmentManager().popBackStack();
 
             }

@@ -2,15 +2,28 @@ package android.mnah;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
+import simplenlg.features.Feature;
+import simplenlg.features.Tense;
+import simplenlg.framework.CoordinatedPhraseElement;
+import simplenlg.framework.WordElement;
+import simplenlg.phrasespec.NPPhraseSpec;
+import simplenlg.phrasespec.PPPhraseSpec;
+import simplenlg.phrasespec.SPhraseSpec;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -20,6 +33,7 @@ import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -37,8 +51,9 @@ import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
 import com.google.firebase.ml.vision.label.FirebaseVisionOnDeviceAutoMLImageLabelerOptions;
 
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
+import java.util.Currency;
 import java.util.List;
 
 public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragment.SendData {
@@ -55,26 +70,30 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
 
     private int price;
     private String condition;
+    private String currency;
 
+    private FirebaseVisionImageLabel mLabel;
     private FirebaseAutoMLRemoteModel remoteModel;
     private FirebaseAutoMLLocalModel localModel;
     private FirebaseVisionImageLabeler labeler;
     private Bitmap bmp;
+
+    private static final String[] LOCATION_PERMISSIONS = new String[] {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
 
 
 
     @Override
     public void setCondition(String condition) {
         this.condition = condition;
-        System.out.println("***************************************** condition: " + condition);
+        //Since the condition cannot be nothing we can resume operation when this method has been called.
+        createFinalDescription();
+
 
     }
 
     @Override
     public void setPrice(int price) {
         this.price = price;
-        System.out.println("***************************************** price: " + price);
-
     }
 
     @Override
@@ -99,7 +118,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
             }
         });
 
-
+        this.currency = getCurrency();
         updateImageView();
 
 
@@ -204,7 +223,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
                 //TODO: Find out how to alert the user if no label was found
                 for (FirebaseVisionImageLabel lab : firebaseVisionImageLabels) {
                     System.out.println(String.format("Label: %s, Confidence: %4.2f", lab.getText(), lab.getConfidence()));
-                    createDescription(lab);
+                    createInitialDescription(lab);
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
@@ -215,13 +234,39 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         });
     }
 
-    public void createDescription(FirebaseVisionImageLabel label) {
+    public void createInitialDescription(FirebaseVisionImageLabel label) {
+        mLabel = label;
+        final String entity = label.getText();
+        String[] parts = entity.split("-");
+        switch (parts[0]) {
+            case "phone" :
+                setSummaryText("Is this a " + parts[2] + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
+                break;
+            case "laptop":
+                setSummaryText("Is this a " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
+        }
 
-        //NLGElement s1 = SimpleNLG.getFactory().createSentence("i am happy");
+        mNextButton.setEnabled(true);
+        mNextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
 
-        /*
+                FragmentManager fm = getSupportFragmentManager();
+                Fragment fragment = new ExtraInfoFragment();
+                fm.beginTransaction().add(R.id.container_summary, fragment).addToBackStack("extrainfo").commit();
+            }
+        });
+
+    }
+
+    public void setSummaryText(String text) {
+        mSummaryText.setText(text);
+    }
+
+    public void createFinalDescription(){
+
         SimpleNLG simpleNLG = new SimpleNLG();
-        String entity = label.getText();
+        String entity = mLabel.getText();
         String[] parts = entity.split("-"); //the categories: parts[0] = laptop/phone, parts[1] = brand, parts[2] = color (only phones)
         SPhraseSpec s1 = simpleNLG.getFactory().createClause();
 
@@ -253,30 +298,74 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
                 break;
         }
 
-        String output = simpleNLG.getRealiser().realiseSentence(s1);
-        mSummaryText.setText(output);*/
+        //Create second clause of the description with the condition of the item and the price.
 
-        final String entity = label.getText();
-        String[] parts = entity.split("-");
-        switch (parts[0]) {
-            case "phone" :
-                mSummaryText.setText("Is this a " + parts[2] + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
-                break;
-            case "laptop":
-                mSummaryText.setText("Is this a " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
-        }
+        //preposition: "in x condition"..
+        PPPhraseSpec pp = simpleNLG.getFactory().createPrepositionPhrase();
+        pp.addComplement(simpleNLG.getLexicon().getWord(this.condition.toLowerCase()));
+        pp.setPreposition("in");
 
-        mNextButton.setEnabled(true);
-        mNextButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+        //"it is in x condition"..
+        SPhraseSpec s2 = simpleNLG.getFactory().createClause();
+        s2.setFeature(Feature.TENSE, Tense.PRESENT);
+        s2.setSubject("it");
+        s2.setVerb("be");
+        s2.addComplement(pp);
+        s2.addComplement("condition");
 
-                FragmentManager fm = getSupportFragmentManager();
-                Fragment fragment = new ExtraInfoFragment();
-                fm.beginTransaction().add(R.id.container_summary, fragment).addToBackStack("extrainfo").commit();
+        SPhraseSpec s3 = simpleNLG.getFactory().createClause();
+        s3.setFeature(Feature.TENSE, Tense.PRESENT);
+        s3.setSubject("it");
+        s3.setVerb("cost");
+        s3.addComplement(this.price + " " + this.currency);
+
+
+        CoordinatedPhraseElement cc = simpleNLG.getFactory().createCoordinatedPhrase();
+        cc.addCoordinate(s2);
+        cc.addCoordinate(s3); //when the conjunction isn't specified it defaults to "and"
+
+
+        //Putting it together
+        CoordinatedPhraseElement c = simpleNLG.getFactory().createCoordinatedPhrase();
+        c.addCoordinate(s1); //first part of the description with type, color and brand
+        c.addCoordinate(cc); //second part with condition and price
+        c.setConjunction(",");
+        String output = simpleNLG.getRealiser().realiseSentence(c);
+        mSummaryText.setText(output);
+    }
+
+
+    public String getCurrency() {
+        String currencyCode = "";
+        int r = ContextCompat.checkSelfPermission(this, LOCATION_PERMISSIONS[0]);
+        if (r == 0) {
+            LocationManager locationManager = (LocationManager) getSystemService(SummaryActivity.LOCATION_SERVICE);
+            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+            if (location != null) {
+                Geocoder geo = new Geocoder(this);
+                try {
+                    List<Address> addresses = geo.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                    Address addr = addresses.get(0);
+                    currencyCode = Currency.getInstance(addr.getLocale()).getCurrencyCode();
+                } catch (IOException e) {
+                    Log.e("SummaryActivity", "IOException: " + e);
+                }
             }
-        });
+        } else {
+            requestPermissions(LOCATION_PERMISSIONS, 0);
+        }
+        return currencyCode;
+    }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        switch (requestCode) {
+            case 0:
+            default:
+                super.onRequestPermissionsResult(requestCode,permissions,grantResults);
+                Toast.makeText(this,  "Please enable access to location services.", Toast.LENGTH_SHORT);
+        }
     }
 
 
