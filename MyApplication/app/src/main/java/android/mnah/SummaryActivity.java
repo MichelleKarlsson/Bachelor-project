@@ -71,11 +71,15 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
     private int price;
     private String condition;
     private String currency;
+    private String color = "";
 
     private FirebaseVisionImageLabel mLabel;
-    private FirebaseAutoMLRemoteModel remoteModel;
-    private FirebaseAutoMLLocalModel localModel;
-    private FirebaseVisionImageLabeler labeler;
+    private FirebaseAutoMLRemoteModel remoteDeviceModel;
+    private FirebaseAutoMLRemoteModel remoteColorModel;
+    private FirebaseAutoMLLocalModel localDeviceModel;
+    private FirebaseAutoMLLocalModel localColorModel;
+    private FirebaseVisionImageLabeler deviceLabeler;
+    private FirebaseVisionImageLabeler colorLabeler;
     private Bitmap bmp;
 
     private static final String[] LOCATION_PERMISSIONS = new String[] {Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION};
@@ -122,46 +126,76 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         updateImageView();
 
 
-        //Initialize the remote ML model:
-        remoteModel = new FirebaseAutoMLRemoteModel.Builder("Devices_202022792454").build();
+        //Initialize the remote ML models:
+        remoteDeviceModel = new FirebaseAutoMLRemoteModel.Builder("Devices_202022792454").build();
+        remoteColorModel = new FirebaseAutoMLRemoteModel.Builder("Colors_202043105816").build();
 
         FirebaseModelDownloadConditions conditions = new FirebaseModelDownloadConditions.Builder()
                 .build(); //add .requireWifi() before build here
-        FirebaseModelManager.getInstance().download(remoteModel,conditions)
+        FirebaseModelManager.getInstance().download(remoteDeviceModel,conditions)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
-                        System.out.println("Download of model successful");
+                        System.out.println("Download of device model successful");
+                    }
+                });
+        FirebaseModelManager.getInstance().download(remoteColorModel, conditions)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        System.out.println("Download of color model successful");
                     }
                 });
 
-        //Initialize the local ML model:
-        localModel = new FirebaseAutoMLLocalModel.Builder().setAssetFilePath("manifest.json").build();
+        //Initialize the local ML models:
+        localDeviceModel = new FirebaseAutoMLLocalModel.Builder().setAssetFilePath("manifest.json").build();
+        localColorModel = new FirebaseAutoMLLocalModel.Builder().setAssetFilePath("colormanifest.json").build();
 
-        makeLabeler();
+        makeLabelers();
 
     }
 
 
-    private void makeLabeler() {
+    private void makeLabelers() {
 
-        FirebaseModelManager.getInstance().isModelDownloaded(remoteModel).addOnSuccessListener(new OnSuccessListener<Boolean>() {
+        FirebaseModelManager.getInstance().isModelDownloaded(remoteDeviceModel).addOnSuccessListener(new OnSuccessListener<Boolean>() {
             @Override
             public void onSuccess(Boolean downloaded) {
                 FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder optionsBuilder;
                 if (downloaded) {
-                    optionsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(remoteModel);
+                    optionsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(remoteDeviceModel);
                 } else {
-                    optionsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(localModel);
+                    optionsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(localDeviceModel);
                 }
                 FirebaseVisionOnDeviceAutoMLImageLabelerOptions options = optionsBuilder
                         .setConfidenceThreshold(0.5f)
                         .build();
 
                 try {
-                    labeler = FirebaseVision.getInstance().getOnDeviceAutoMLImageLabeler(options);
+                    deviceLabeler = FirebaseVision.getInstance().getOnDeviceAutoMLImageLabeler(options);
                 } catch (FirebaseMLException e) {
-                    Log.e("Labeler", "Labeler init failed", e);
+                    Log.e("DeviceLabeler", "Labeler init failed", e);
+                }
+            }
+        });
+
+        FirebaseModelManager.getInstance().isModelDownloaded(remoteColorModel).addOnSuccessListener(new OnSuccessListener<Boolean>() {
+            @Override
+            public void onSuccess(Boolean downloaded) {
+                FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder optsBuilder;
+                if (downloaded) {
+                    optsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(remoteColorModel);
+                } else {
+                    optsBuilder = new FirebaseVisionOnDeviceAutoMLImageLabelerOptions.Builder(localColorModel);
+                }
+                FirebaseVisionOnDeviceAutoMLImageLabelerOptions opts = optsBuilder
+                        .setConfidenceThreshold(0.5f)
+                        .build();
+
+                try {
+                    colorLabeler = FirebaseVision.getInstance().getOnDeviceAutoMLImageLabeler(opts);
+                } catch (FirebaseMLException e) {
+                    Log.e("ColorLabeler", "Labeler init failed", e);
                 }
             }
         });
@@ -211,13 +245,31 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
             mImageView.setImageBitmap(bmp);
             FirebaseVisionImage img = FirebaseVisionImage.fromBitmap(bmp);
             detectImage(img);
+            detectColor(img);
 
         }
     }
 
+    protected Task<List<FirebaseVisionImageLabel>> detectColor(final FirebaseVisionImage img) {
+        return colorLabeler.processImage(img).addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
+            @Override
+            public void onSuccess(List<FirebaseVisionImageLabel> firebaseVisionImageLabels) {
+                for (FirebaseVisionImageLabel lab : firebaseVisionImageLabels) {
+                    System.out.println("Color detected: " + lab.getText());
+                    color = lab.getText();
+                }
+            }
+        }).addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                Log.e("Color detection error", "exception while running color model: ", e);
+            }
+        });
+    }
+
 
     protected Task<List<FirebaseVisionImageLabel>> detectImage(final FirebaseVisionImage img) {
-        return labeler.processImage(img).addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
+        return deviceLabeler.processImage(img).addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
             @Override
             public void onSuccess(List<FirebaseVisionImageLabel> firebaseVisionImageLabels) {
                 //TODO: Find out how to alert the user if no label was found
@@ -229,7 +281,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         }).addOnFailureListener(new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
-                Log.e("Detection error", "Exception occurred while trying to run model on image", e);
+                Log.e("Device detection error", "exception while running device model: ", e);
             }
         });
     }
@@ -240,10 +292,10 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         String[] parts = entity.split("-");
         switch (parts[0]) {
             case "phone" :
-                setSummaryText("Is this a " + parts[2] + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
+                setSummaryText("Is this a " + color + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
                 break;
             case "laptop":
-                setSummaryText("Is this a " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
+                setSummaryText("Is this a " + color + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
         }
 
         mNextButton.setEnabled(true);
@@ -274,29 +326,19 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         s1.setFeature(Feature.TENSE, Tense.PRESENT);
         s1.setSubject("This");
         s1.setVerb("be");
-        //Look up the words identified in the lexicon
+        //Look up the words identified in the lexicon and realise them
         WordElement brand = simpleNLG.getLexicon().getWord(parts[1]);
         WordElement type = simpleNLG.getLexicon().getWord(parts[0]);
-        String brandword = simpleNLG.getRealiser().realise(brand).getRealisation();
-        String brandcap = brandword.substring(0,1).toUpperCase() + brandword.substring(1);
-        String typeword = simpleNLG.getRealiser().realise(type).getRealisation();
+        WordElement wordColor = simpleNLG.getLexicon().getWord(color);
+        String brandWord = simpleNLG.getRealiser().realise(brand).getRealisation();
+        String brandCap = brandWord.substring(0,1).toUpperCase() + brandWord.substring(1);
+        String typeWord = simpleNLG.getRealiser().realise(type).getRealisation();
+        String colorWord = simpleNLG.getRealiser().realise(wordColor).getRealisation();
 
-        switch (parts[0]) {
-            case "laptop":
-                NPPhraseSpec item = simpleNLG.getFactory().createNounPhrase(brandcap + " " + typeword);
-                item.setDeterminer("a");
-                s1.addComplement(item);
-                break;
-            case "phone":
-                WordElement color = simpleNLG.getLexicon().getWord(parts[2]);
-                String colorString = simpleNLG.getRealiser().realise(color).getRealisation();
-                NPPhraseSpec phoneitem = simpleNLG.getFactory().createNounPhrase(colorString + " " + brandcap + " " + typeword);
-                phoneitem.setDeterminer("a");
-                s1.addComplement(phoneitem);
-                break;
-            default:
-                break;
-        }
+
+        NPPhraseSpec item = simpleNLG.getFactory().createNounPhrase(colorWord + " " + brandCap + " " + typeWord);
+        item.setDeterminer("a");
+        s1.addComplement(item);
 
         //Create second clause of the description with the condition of the item and the price.
 

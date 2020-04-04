@@ -8,6 +8,7 @@
         android:background="@color/colorPrimary"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:id="@+id/about_text"
         android:textColor="@color/white"
         android:layout_marginLeft="50dp"
         android:layout_marginRight="50dp"
