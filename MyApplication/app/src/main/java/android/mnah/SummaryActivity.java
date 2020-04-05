@@ -6,13 +6,6 @@ import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
-import simplenlg.features.Feature;
-import simplenlg.features.Tense;
-import simplenlg.framework.CoordinatedPhraseElement;
-import simplenlg.framework.WordElement;
-import simplenlg.phrasespec.NPPhraseSpec;
-import simplenlg.phrasespec.PPPhraseSpec;
-import simplenlg.phrasespec.SPhraseSpec;
 
 import android.Manifest;
 import android.content.Context;
@@ -73,7 +66,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
     private String currency;
     private String color = "";
 
-    private FirebaseVisionImageLabel mLabel;
+    private FirebaseVisionImageLabel mDeviceLabel;
     private FirebaseAutoMLRemoteModel remoteDeviceModel;
     private FirebaseAutoMLRemoteModel remoteColorModel;
     private FirebaseAutoMLLocalModel localDeviceModel;
@@ -90,7 +83,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
     public void setCondition(String condition) {
         this.condition = condition;
         //Since the condition cannot be nothing we can resume operation when this method has been called.
-        createFinalDescription();
+        updateFinalDescription();
 
 
     }
@@ -272,7 +265,9 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         return deviceLabeler.processImage(img).addOnSuccessListener(new OnSuccessListener<List<FirebaseVisionImageLabel>>() {
             @Override
             public void onSuccess(List<FirebaseVisionImageLabel> firebaseVisionImageLabels) {
-                //TODO: Find out how to alert the user if no label was found
+                if (firebaseVisionImageLabels.isEmpty()) {
+                    Toast.makeText(SummaryActivity.this, "Nothing detected, please take another picture", Toast.LENGTH_SHORT).show();
+                }
                 for (FirebaseVisionImageLabel lab : firebaseVisionImageLabels) {
                     System.out.println(String.format("Label: %s, Confidence: %4.2f", lab.getText(), lab.getConfidence()));
                     createInitialDescription(lab);
@@ -287,7 +282,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
     }
 
     public void createInitialDescription(FirebaseVisionImageLabel label) {
-        mLabel = label;
+        mDeviceLabel = label;
         final String entity = label.getText();
         String[] parts = entity.split("-");
         switch (parts[0]) {
@@ -295,7 +290,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
                 setSummaryText("Is this a " + color + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
                 break;
             case "laptop":
-                setSummaryText("Is this a " + color + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
+                setSummaryText("Is this a " + color + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
         }
 
         mNextButton.setEnabled(true);
@@ -315,65 +310,12 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         mSummaryText.setText(text);
     }
 
-    public void createFinalDescription(){
-
+    public void updateFinalDescription(){
         SimpleNLG simpleNLG = new SimpleNLG();
-        String entity = mLabel.getText();
-        String[] parts = entity.split("-"); //the categories: parts[0] = laptop/phone, parts[1] = brand, parts[2] = color (only phones)
-        SPhraseSpec s1 = simpleNLG.getFactory().createClause();
-
-        //create initial sentence, make it present tense and start it with "This is.."
-        s1.setFeature(Feature.TENSE, Tense.PRESENT);
-        s1.setSubject("This");
-        s1.setVerb("be");
-        //Look up the words identified in the lexicon and realise them
-        WordElement brand = simpleNLG.getLexicon().getWord(parts[1]);
-        WordElement type = simpleNLG.getLexicon().getWord(parts[0]);
-        WordElement wordColor = simpleNLG.getLexicon().getWord(color);
-        String brandWord = simpleNLG.getRealiser().realise(brand).getRealisation();
-        String brandCap = brandWord.substring(0,1).toUpperCase() + brandWord.substring(1);
-        String typeWord = simpleNLG.getRealiser().realise(type).getRealisation();
-        String colorWord = simpleNLG.getRealiser().realise(wordColor).getRealisation();
-
-
-        NPPhraseSpec item = simpleNLG.getFactory().createNounPhrase(colorWord + " " + brandCap + " " + typeWord);
-        item.setDeterminer("a");
-        s1.addComplement(item);
-
-        //Create second clause of the description with the condition of the item and the price.
-
-        //preposition: "in x condition"..
-        PPPhraseSpec pp = simpleNLG.getFactory().createPrepositionPhrase();
-        pp.addComplement(simpleNLG.getLexicon().getWord(this.condition.toLowerCase()));
-        pp.setPreposition("in");
-
-        //"it is in x condition"..
-        SPhraseSpec s2 = simpleNLG.getFactory().createClause();
-        s2.setFeature(Feature.TENSE, Tense.PRESENT);
-        s2.setSubject("it");
-        s2.setVerb("be");
-        s2.addComplement(pp);
-        s2.addComplement("condition");
-
-        SPhraseSpec s3 = simpleNLG.getFactory().createClause();
-        s3.setFeature(Feature.TENSE, Tense.PRESENT);
-        s3.setSubject("it");
-        s3.setVerb("cost");
-        s3.addComplement(this.price + " " + this.currency);
-
-
-        CoordinatedPhraseElement cc = simpleNLG.getFactory().createCoordinatedPhrase();
-        cc.addCoordinate(s2);
-        cc.addCoordinate(s3); //when the conjunction isn't specified it defaults to "and"
-
-
-        //Putting it together
-        CoordinatedPhraseElement c = simpleNLG.getFactory().createCoordinatedPhrase();
-        c.addCoordinate(s1); //first part of the description with type, color and brand
-        c.addCoordinate(cc); //second part with condition and price
-        c.setConjunction(",");
-        String output = simpleNLG.getRealiser().realiseSentence(c);
-        mSummaryText.setText(output);
+        String entity = mDeviceLabel.getText();
+        String[] parts = entity.split("-"); //the categories: parts[0] = laptop/phone, parts[1] = brand
+        String desc = simpleNLG.getFullDescription(parts[0], parts[1], color, condition, price, currency);
+        setSummaryText(desc);
     }
 
 
