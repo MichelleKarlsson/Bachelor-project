@@ -76,9 +76,8 @@ public class ExtraInfoFragment extends Fragment {
         mInformationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //TODO: Handle the number format exception that arises here if user doesn't input a price
                 int price;
-                if (mPrice.getText().equals("")) {
+                if (mPrice.getText().toString().equals("")) {
                     price = 0;
                 } else {
                     price = Integer.parseInt(mPrice.getText().toString());

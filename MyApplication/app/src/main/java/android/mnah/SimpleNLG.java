@@ -39,6 +39,12 @@ public class SimpleNLG {
         s1.setSubject("This");
         s1.setVerb("be");
 
+        if (type == null || brand == null || color == null) {
+            SPhraseSpec s2 = this.factory.createClause();
+            s2.setComplement("Insufficient information");
+            return s2;
+        }
+
         WordElement wordBrand = this.lexicon.getWord(brand);
         WordElement wordType = this.lexicon.getWord(type);
         WordElement wordColor = this.lexicon.getWord(color);
@@ -71,9 +77,13 @@ public class SimpleNLG {
     public SPhraseSpec getPriceString(int price, String currency) {
         SPhraseSpec s3 = this.factory.createClause();
         s3.setFeature(Feature.TENSE, Tense.PRESENT);
-        s3.setSubject("it");
-        s3.setVerb("cost");
-        s3.addComplement(price + " " + currency);
+        if (price == 0) { //If no lowest price has been set, add generic text
+            s3.addComplement("bids are welcome");
+        } else {
+            s3.setSubject("it");
+            s3.setVerb("cost");
+            s3.addComplement(price + " " + currency);
+        }
         return s3;
     }
 
@@ -81,9 +91,10 @@ public class SimpleNLG {
         SPhraseSpec s1 = getTypeBrandString(type, brand, color);
         SPhraseSpec s2 = getConditionString(condition);
         SPhraseSpec s3 = getPriceString(price, currency);
+
         CoordinatedPhraseElement cc = this.factory.createCoordinatedPhrase();
         cc.addCoordinate(s2);
-        cc.addCoordinate(s3); //when the conjunction isn't specified it defaults to "and"
+        cc.addCoordinate(s3);
 
 
         //Putting it together

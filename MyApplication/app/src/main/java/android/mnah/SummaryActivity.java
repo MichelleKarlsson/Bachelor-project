@@ -104,7 +104,16 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         mPictureFile = getPictureFile(mPicture);
 
         mNextButton = findViewById(R.id.next_button);
-        mNextButton.setEnabled(false);
+
+        mNextButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                FragmentManager fm = getSupportFragmentManager();
+                Fragment fragment = new ExtraInfoFragment();
+                fm.beginTransaction().add(R.id.container_summary, fragment).addToBackStack("extrainfo").commit();
+            }
+        });
+
         mSummaryText = findViewById(R.id.summarytext);
         mImageView = findViewById(R.id.imageview);
         mPictureButton = findViewById(R.id.picture_button);
@@ -293,16 +302,6 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
                 setSummaryText("Is this a " + color + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
         }
 
-        mNextButton.setEnabled(true);
-        mNextButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-                FragmentManager fm = getSupportFragmentManager();
-                Fragment fragment = new ExtraInfoFragment();
-                fm.beginTransaction().add(R.id.container_summary, fragment).addToBackStack("extrainfo").commit();
-            }
-        });
 
     }
 
@@ -311,11 +310,15 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
     }
 
     public void updateFinalDescription(){
-        SimpleNLG simpleNLG = new SimpleNLG();
-        String entity = mDeviceLabel.getText();
-        String[] parts = entity.split("-"); //the categories: parts[0] = laptop/phone, parts[1] = brand
-        String desc = simpleNLG.getFullDescription(parts[0], parts[1], color, condition, price, currency);
-        setSummaryText(desc);
+        if (mImageView.getDrawable() == null) {
+            Toast.makeText(this, "The description requires a photo", Toast.LENGTH_SHORT).show();
+        } else {
+            SimpleNLG simpleNLG = new SimpleNLG();
+            String entity = mDeviceLabel.getText();
+            String[] parts = entity.split("-"); //the categories: parts[0] = laptop/phone, parts[1] = brand
+            String desc = simpleNLG.getFullDescription(parts[0], parts[1], color, condition, price, currency);
+            setSummaryText(desc);
+        }
     }
 
 
