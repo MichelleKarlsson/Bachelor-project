@@ -278,8 +278,8 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
                     Toast.makeText(SummaryActivity.this, "Nothing detected, please take another picture", Toast.LENGTH_SHORT).show();
                 }
                 for (FirebaseVisionImageLabel lab : firebaseVisionImageLabels) {
-                    System.out.println(String.format("Label: %s, Confidence: %4.2f", lab.getText(), lab.getConfidence()));
-                    createInitialDescription(lab);
+                    setSummaryText(createInitialDescription(lab, color));
+
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
@@ -290,18 +290,11 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         });
     }
 
-    public void createInitialDescription(FirebaseVisionImageLabel label) {
+    public String createInitialDescription(FirebaseVisionImageLabel label, String color) {
         mDeviceLabel = label;
         final String entity = label.getText();
         String[] parts = entity.split("-");
-        switch (parts[0]) {
-            case "phone" :
-                setSummaryText("Is this a " + color + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
-                break;
-            case "laptop":
-                setSummaryText("Is this a " + color + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.");
-        }
-
+        return "Is this a " + color + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.";
 
     }
 
@@ -323,26 +316,28 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
 
 
     public String getCurrency() {
-        String currencyCode = "";
-        int r = ContextCompat.checkSelfPermission(this, LOCATION_PERMISSIONS[0]);
-        if (r == 0) {
-            LocationManager locationManager = (LocationManager) getSystemService(SummaryActivity.LOCATION_SERVICE);
-            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
-            if (location != null) {
-                Geocoder geo = new Geocoder(this);
-                try {
-                    List<Address> addresses = geo.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                    Address addr = addresses.get(0);
-                    currencyCode = Currency.getInstance(addr.getLocale()).getCurrencyCode();
-                } catch (IOException e) {
-                    Log.e("SummaryActivity", "IOException: " + e);
+            String currencyCode = "";
+            int r = ContextCompat.checkSelfPermission(this, LOCATION_PERMISSIONS[0]);
+            if (r == 0) {
+                LocationManager locationManager = (LocationManager) getSystemService(SummaryActivity.LOCATION_SERVICE);
+                Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+                if (location != null) {
+                    Geocoder geo = new Geocoder(this);
+                    try {
+                        List<Address> addresses = geo.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                        Address addr = addresses.get(0);
+                        currencyCode = Currency.getInstance(addr.getLocale()).getCurrencyCode();
+                    } catch (IOException e) {
+                        Log.e("SummaryActivity", "IOException: " + e);
+                    }
                 }
+            } else {
+                requestPermissions(LOCATION_PERMISSIONS, 0);
             }
-        } else {
-            requestPermissions(LOCATION_PERMISSIONS, 0);
-        }
-        return currencyCode;
+            return currencyCode;
+
     }
 
     @Override

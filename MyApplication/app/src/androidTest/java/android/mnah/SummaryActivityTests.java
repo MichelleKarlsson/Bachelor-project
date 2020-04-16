@@ -11,6 +11,9 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.widget.ImageView;
 
+import com.google.android.gms.vision.label.ImageLabel;
+import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -44,6 +47,8 @@ import static androidx.test.espresso.matcher.ViewMatchers.withSpinnerText;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.core.AllOf.allOf;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)
 public class SummaryActivityTests {
@@ -78,6 +83,23 @@ public class SummaryActivityTests {
         onView(withId(R.id.information_button)).perform(click());
     }
 
+
+    @Test
+    public void getCurrencyFindsLocale() {
+        assertTrue(intentsRule.getActivity().getCurrency().equals("DKK"));
+    }
+
+    @Test
+    public void setSummaryTextSetsText() {
+        intentsRule.getActivity().setSummaryText("Hello world");
+        onView(withId(R.id.summarytext)).check(matches(withText("Hello world")));
+    }
+
+    @Test
+    public void getInitialDescriptionGivesInitialDescription() {
+        FirebaseVisionImageLabel fl = new FirebaseVisionImageLabel(new ImageLabel(null,"phone-android-black", 80));
+        assertEquals("Is this a black android phone? Press 'Next' to confirm, or take a new picture.", intentsRule.getActivity().createInitialDescription(fl, "black"));
+    }
 }
 
 

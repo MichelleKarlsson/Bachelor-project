@@ -13,7 +13,7 @@
         android:layout_height="match_parent"
         android:id="@+id/container_summary">
 
-    <androidx.appcompat.widget.LinearLayoutCompat
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
@@ -67,7 +67,7 @@
             android:text="@string/next_button"
             android:layout_marginBottom="10dp"/>
 
-    </androidx.appcompat.widget.LinearLayoutCompat>
+    </LinearLayout>
 
     </FrameLayout>
 

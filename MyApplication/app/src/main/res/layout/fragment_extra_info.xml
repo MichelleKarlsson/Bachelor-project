@@ -25,6 +25,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/condition"
+                android:id="@+id/condition_text"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:layout_marginLeft="20dp"/>
@@ -53,6 +54,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/asking_price"
+                android:id="@+id/price_text"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:layout_marginLeft="20dp"/>
