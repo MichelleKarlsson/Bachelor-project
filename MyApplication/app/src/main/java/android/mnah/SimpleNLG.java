@@ -33,7 +33,7 @@ public class SimpleNLG {
 
     }
 
-    public SPhraseSpec getTypeBrandString(String type, String brand, String color) {
+    public SPhraseSpec getTypeBrandString(String type, String brand, String color, String model) {
         SPhraseSpec s1 = this.factory.createClause();
         s1.setFeature(Feature.TENSE, Tense.PRESENT);
         s1.setSubject("This");
@@ -48,15 +48,27 @@ public class SimpleNLG {
         WordElement wordBrand = this.lexicon.getWord(brand);
         WordElement wordType = this.lexicon.getWord(type);
         WordElement wordColor = this.lexicon.getWord(color);
+        WordElement wordModel = this.lexicon.getWord(model);
         String brandReal = this.realiser.realise(wordBrand).getRealisation();
-        String brandCap = brandReal.substring(0,1).toUpperCase() + brandReal.substring(1);
+        String brandCap = brandReal.substring(0, 1).toUpperCase() + brandReal.substring(1);
         String typeReal = this.realiser.realise(wordType).getRealisation();
         String colorReal = this.realiser.realise(wordColor).getRealisation();
+        String wordReal = this.realiser.realise(wordModel).getRealisation();
 
-        NPPhraseSpec item = this.factory.createNounPhrase(colorReal + " " + brandCap + " " + typeReal);
+        NPPhraseSpec item;
+        if (model.equals("None")) {
+            item = this.factory.createNounPhrase(colorReal + " " + brandCap + " " + typeReal);
+        } else {
+            if (brand.equals("android")) {
+                item = this.factory.createNounPhrase(colorReal + " " + wordReal + " " + brandCap + " " + typeReal);
+            } else {
+                item = this.factory.createNounPhrase(colorReal + " " + brandCap + " " + wordReal + " " + typeReal);
+            }
+        }
         item.setDeterminer("a");
         s1.addComplement(item);
         return s1;
+
     }
 
     public SPhraseSpec getConditionString(String condition) {
@@ -87,8 +99,9 @@ public class SimpleNLG {
         return s3;
     }
 
-    public String getFullDescription(String type, String brand, String color, String condition, int price, String currency) {
-        SPhraseSpec s1 = getTypeBrandString(type, brand, color);
+    public String getFullDescription(String type, String brand, String color, String model, String condition, int price, String currency) {
+
+        SPhraseSpec s1 = getTypeBrandString(type, brand, color, model);
         SPhraseSpec s2 = getConditionString(condition);
         SPhraseSpec s3 = getPriceString(price, currency);
 

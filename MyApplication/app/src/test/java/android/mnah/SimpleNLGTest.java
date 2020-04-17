@@ -23,20 +23,63 @@ public class SimpleNLGTest {
     }
 
     @Test
-    public void getTypeBrandStringGivenCorrectInput() {
+    public void getTypeBrandStringGivenModelNone() {
         String type = "laptop";
         String brand = "Apple";
         String color = "white";
-        String ans = simpleNLG.getRealiser().realiseSentence(simpleNLG.getTypeBrandString(type, brand, color));
+        String model = "None";
+        String ans = simpleNLG.getRealiser().realiseSentence(simpleNLG.getTypeBrandString(type, brand, color, model));
         assertEquals(String.format("This is a %s %s %s.", color, brand, type), ans);
     }
 
     @Test
-    public void getTypeBrandStringGivenIncorrectInputFails() {
+    public void getTypeBrandStringGivenModel() {
+        String type = "laptop";
+        String brand = "Dell";
+        String color = "black";
+        String model = "Latitude";
+        String ans = simpleNLG.getRealiser().realiseSentence(simpleNLG.getTypeBrandString(type, brand, color, model));
+        //"This is a black Dell Latitude laptop."
+        assertEquals(String.format("This is a %s %s %s %s.", color, brand, model, type), ans);
+    }
+
+    @Test
+    public void getTypeBrandStringGivenTypeNullFails() {
         String brand = "Lenovo";
         String color = "silver";
-        String ans = simpleNLG.getRealiser().realiseSentence(simpleNLG.getTypeBrandString(null,brand,color));
-        assertEquals(String.format("Insufficient information."), ans);
+        String model = "None";
+        String ans = simpleNLG.getRealiser().realiseSentence(simpleNLG.getTypeBrandString(null,brand,color,model));
+        assertEquals("Insufficient information.", ans);
+    }
+
+    @Test
+    public void getTypeBrandStringGivenBrandNullFails() {
+        String color = "black";
+        String type = "phone";
+        String model = "None";
+        String ans = simpleNLG.getRealiser().realiseSentence(simpleNLG.getTypeBrandString(type, null, color, model));
+        assertEquals("Insufficient information.", ans);
+    }
+
+    @Test
+    public void getTypeBrandStringGivenColorNullFails() {
+        String brand = "Acer";
+        String type = "laptop";
+        String model = "None";
+        String ans = simpleNLG.getRealiser().realiseSentence(simpleNLG.getTypeBrandString(type, brand, null, model));
+        assertEquals("Insufficient information.", ans);
+    }
+
+    @Test
+    public void getTypeBrandStringGivenAndroid() {
+        String brand = "android";
+        String confirmBrand = "Android";
+        String type = "phone";
+        String color = "black";
+        String model = "Huawei";
+        String ans = simpleNLG.getRealiser().realiseSentence(simpleNLG.getTypeBrandString(type, brand, color, model));
+        //"This is a black Huawei android phone."
+        assertEquals(String.format("This is a %s %s %s %s.", color, model, confirmBrand, type), ans);
     }
 
     @Test
@@ -63,15 +106,31 @@ public class SimpleNLGTest {
     }
 
     @Test
-    public void getFullDescriptionReturnsFullDescription() {
+    public void getFullDescriptionReturnsFullDescriptionAndroid() {
         String type = "phone";
-        String brand = "Android";
+        String brand = "android";
+        String confirmBrand = "Android";
         String color = "black";
+        String model = "Oneplus";
         String condition = "like new";
         int price = 1000;
         String currency = "DKK";
 
-        String ans = simpleNLG.getFullDescription(type, brand, color, condition, price, currency);
-        assertEquals(String.format("This is a %s %s %s, it is in %s condition and it costs %s %s.",color,brand,type,condition,price,currency),ans);
+        String ans = simpleNLG.getFullDescription(type, brand, color, model, condition, price, currency);
+        assertEquals(String.format("This is a %s %s %s %s, it is in %s condition and it costs %s %s.",color,model,confirmBrand,type,condition,price,currency),ans);
+    }
+
+    @Test
+    public void getFullDescriptionReturnsFullDescription() {
+        String type = "laptop";
+        String brand = "Apple";
+        String color = "silver";
+        String model = "MacBook Air";
+        String condition = "refurbished";
+        int price = 3000;
+        String currency = "DKK";
+
+        String ans = simpleNLG.getFullDescription(type, brand, color, model, condition, price, currency);
+        assertEquals(String.format("This is a %s %s %s %s, it is in %s condition and it costs %s %s.", color, brand, model, type, condition, price, currency), ans);
     }
 }

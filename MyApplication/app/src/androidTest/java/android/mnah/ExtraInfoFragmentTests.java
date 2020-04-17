@@ -2,15 +2,11 @@ package android.mnah;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
 
-import androidx.fragment.app.FragmentFactory;
 import androidx.fragment.app.testing.FragmentScenario;
 import androidx.test.espresso.intent.Intents;
-import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import static androidx.test.espresso.Espresso.onData;
@@ -47,9 +43,9 @@ public class ExtraInfoFragmentTests {
         FragmentScenario<ExtraInfoFragment> fs = FragmentScenario.launchInContainer(ExtraInfoFragment.class,null,R.style.AppTheme
                 ,null);
         String text = "Refurbished";
-        onView(withId(R.id.dropdown)).perform(click());
+        onView(withId(R.id.conditionspinner)).perform(click());
         onData(allOf(is(instanceOf(String.class)), is(text))).perform(click());
-        onView(withId(R.id.dropdown)).check(matches(withSpinnerText(containsString(text))));
+        onView(withId(R.id.conditionspinner)).check(matches(withSpinnerText(containsString(text))));
     }
 
     @Test

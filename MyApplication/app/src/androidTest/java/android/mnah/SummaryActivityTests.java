@@ -5,28 +5,16 @@ import android.app.Instrumentation;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.os.Bundle;
-import android.provider.MediaStore;
-import android.widget.ImageView;
 
 import com.google.android.gms.vision.label.ImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.regex.Pattern;
-
-import androidx.test.espresso.Espresso;
-import androidx.test.espresso.intent.Intents;
 import androidx.test.espresso.intent.rule.IntentsTestRule;
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.rule.ActivityTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
 import static androidx.test.espresso.Espresso.onView;
@@ -78,7 +66,7 @@ public class SummaryActivityTests {
     @Test
     public void extraInfoFragmentReturnsCorrectly() {
         onView(withId(R.id.next_button)).perform(click());
-        withId(R.id.dropdown).matches(withSpinnerText("Like new"));
+        withId(R.id.conditionspinner).matches(withSpinnerText("Like new"));
         onView(withId(R.id.price)).perform(replaceText("3000"));
         onView(withId(R.id.information_button)).perform(click());
     }

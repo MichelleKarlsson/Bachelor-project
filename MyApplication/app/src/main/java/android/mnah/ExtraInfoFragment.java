@@ -1,12 +1,8 @@
 package android.mnah;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.Intent;
-import android.mnah.R;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,10 +11,12 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
+
+import java.lang.reflect.Array;
 
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 
 public class ExtraInfoFragment extends Fragment {
 
@@ -26,10 +24,14 @@ public class ExtraInfoFragment extends Fragment {
     private EditText mPrice;
     private Button mInformationButton;
     private SendData sendData;
+    private Spinner mModelSpinner;
+    private TextView mTopDescription;
 
 
     private int price;
     private String condition;
+    private String model;
+    private String[] label;
 
     @Override
     public void onAttach(Activity activity){
@@ -52,7 +54,14 @@ public class ExtraInfoFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_extra_info, container, false);
 
-        mConditionSpinner = v.findViewById(R.id.dropdown);
+        //Description at the top of the screen
+        String input = getArguments().getString("label");
+        label = input.split("-");
+        mTopDescription = v.findViewById(R.id.topdescription);
+        mTopDescription.setText(String.format("Additional information for the description of your %s", label[1] + " " + label[0]));
+
+
+        mConditionSpinner = v.findViewById(R.id.conditionspinner);
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(), R.array.item_conditions, R.layout.spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mConditionSpinner.setAdapter(adapter);
@@ -69,6 +78,24 @@ public class ExtraInfoFragment extends Fragment {
 
         });
 
+        mModelSpinner = v.findViewById(R.id.modelspinner);
+        try {
+            mModelSpinner.setAdapter(getAdapter());
+        } catch (Exception e) {
+            Log.e("ExtraInfoFragment", e.getMessage());
+        }
+        mModelSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                model = mModelSpinner.getSelectedItem().toString();
+                System.out.println("SELECTED MODEL WAS " + model);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
 
         mPrice = v.findViewById(R.id.price);
 
@@ -85,6 +112,7 @@ public class ExtraInfoFragment extends Fragment {
 
                 sendData.setPrice(price);
                 sendData.setCondition(condition);
+                sendData.setModel(model);
                 getParentFragmentManager().popBackStack();
 
             }
@@ -95,9 +123,45 @@ public class ExtraInfoFragment extends Fragment {
 
     }
 
+    private ArrayAdapter<CharSequence> getAdapter() {
+        switch(label[1]) {
+            case "dell":
+                ArrayAdapter<CharSequence> adapterdell = ArrayAdapter.createFromResource(getContext(), R.array.dellmodels, R.layout.spinner_item);
+                adapterdell.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                return adapterdell;
+            case "acer":
+                ArrayAdapter<CharSequence> adapteracer = ArrayAdapter.createFromResource(getContext(), R.array.acermodels, R.layout.spinner_item);
+                adapteracer.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                return adapteracer;
+            case "lenovo":
+                ArrayAdapter<CharSequence> adapterlenovo = ArrayAdapter.createFromResource(getContext(), R.array.lenovomodels, R.layout.spinner_item);
+                adapterlenovo.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                return adapterlenovo;
+            case "apple":
+                if (label[0].equals("phone")) {
+                    ArrayAdapter<CharSequence> adapterapplephone = ArrayAdapter.createFromResource(getContext(), R.array.applephonemodels, R.layout.spinner_item);
+                    adapterapplephone.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    return adapterapplephone;
+                } else {
+                    ArrayAdapter<CharSequence> adapterapple = ArrayAdapter.createFromResource(getContext(), R.array.applemodels, R.layout.spinner_item);
+                    adapterapple.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                    return adapterapple;
+                }
+            case "android":
+                ArrayAdapter<CharSequence> adapterandroid = ArrayAdapter.createFromResource(getContext(), R.array.androidbrands, R.layout.spinner_item);
+                adapterandroid.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                return adapterandroid;
+            default:
+                break;
+        }
+
+        throw new IllegalStateException("No adapter created");
+    }
+
     public interface SendData {
         void setCondition(String condition);
         void setPrice(int price);
+        void setModel(String model);
     }
 
 }

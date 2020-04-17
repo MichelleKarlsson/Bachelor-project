@@ -6,6 +6,7 @@
     <string name="condition">Condition</string>
     <string name="asking_price">Asking price</string>
     <string name="back_button">Done</string>
+    <string name="model">Model</string>
 
     <string-array name="item_conditions">
         <item>Like new</item>
@@ -14,6 +15,55 @@
         <item>Used</item>
     </string-array>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string-array name="dellmodels">
+        <item>None</item>
+        <item>XPS</item>
+        <item>Alienware</item>
+        <item>Inspiron</item>
+        <item>Latitude</item>
+        <item>Precision</item>
+    </string-array>
+
+    <string-array name="lenovomodels">
+        <item>None</item>
+        <item>Thinkpad</item>
+        <item>Ideapad</item>
+        <item>YOGA</item>
+        <item>Legion</item>
+    </string-array>
+
+    <string-array name="applemodels">
+        <item>None</item>
+        <item>MacBook Air</item>
+        <item>MacBook Pro</item>
+    </string-array>
+
+    <string-array name="acermodels">
+        <item>None</item>
+        <item>Swift</item>
+        <item>Aspire</item>
+        <item>Nitro</item>
+        <item>Chromebook</item>
+        <item>Spin</item>
+    </string-array>
+
+    <string-array name="applephonemodels">
+        <item>None</item>
+        <item>iPhone 11</item>
+        <item>iPhone X</item>
+        <item>iPhone 8</item>
+        <item>iPhone 7</item>
+        <item>iPhone SE</item>
+    </string-array>
+
+
+    <string-array name="androidbrands">
+        <item>None</item>
+        <item>Huawei</item>
+        <item>Motorola</item>
+        <item>Oneplus</item>
+        <item>Samsung</item>
+        <item>Google</item>
+    </string-array>
+
 </resources>
