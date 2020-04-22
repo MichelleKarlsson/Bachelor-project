@@ -57,8 +57,9 @@ public class ExtraInfoFragment extends Fragment {
         //Description at the top of the screen
         String input = getArguments().getString("label");
         label = input.split("-");
+        String capBrand = label[1].substring(0,1).toUpperCase()+label[1].substring(1);
         mTopDescription = v.findViewById(R.id.topdescription);
-        mTopDescription.setText(String.format("Additional information for the description of your %s", label[1] + " " + label[0]));
+        mTopDescription.setText(String.format("Additional information for the description of your %s", capBrand + " " + label[0]));
 
 
         mConditionSpinner = v.findViewById(R.id.conditionspinner);

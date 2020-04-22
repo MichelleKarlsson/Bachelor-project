@@ -138,7 +138,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
 
 
         //Initialize the remote ML models:
-        remoteDeviceModel = new FirebaseAutoMLRemoteModel.Builder("Devices_202022792454").build();
+        remoteDeviceModel = new FirebaseAutoMLRemoteModel.Builder("devices2_202042213590").build();
         remoteColorModel = new FirebaseAutoMLRemoteModel.Builder("Colors_202043105816").build();
 
         FirebaseModelDownloadConditions conditions = new FirebaseModelDownloadConditions.Builder()
@@ -303,7 +303,8 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         mDeviceLabel = label;
         final String entity = label.getText();
         String[] parts = entity.split("-");
-        return "Is this a " + color + " " + parts[1] + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.";
+        String capBrand = parts[1].substring(0,1).toUpperCase() + parts[1].substring(1);
+        return "Is this a " + capBrand + " " + parts[0] + "? Press 'Next' to confirm, or take a new picture.";
 
     }
 
