@@ -26,6 +26,7 @@ public class ExtraInfoFragment extends Fragment {
     private SendData sendData;
     private Spinner mModelSpinner;
     private TextView mTopDescription;
+    private TextView mCurrencyText;
 
 
     private int price;
@@ -54,6 +55,8 @@ public class ExtraInfoFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_extra_info, container, false);
 
+        mCurrencyText = v.findViewById(R.id.currency);
+        mCurrencyText.setText(getArguments().getString("currency"));
         //Description at the top of the screen
         String input = getArguments().getString("label");
         label = input.split("-");
@@ -158,6 +161,7 @@ public class ExtraInfoFragment extends Fragment {
 
         throw new IllegalStateException("No adapter created");
     }
+
 
     public interface SendData {
         void setCondition(String condition);

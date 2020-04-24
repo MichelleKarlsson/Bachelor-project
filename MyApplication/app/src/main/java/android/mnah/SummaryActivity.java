@@ -105,6 +105,9 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         mPicture = new Picture();
         mPictureFile = getPictureFile(mPicture);
 
+        this.currency = getCurrency();
+
+
         mNextButton = findViewById(R.id.next_button);
 
         mNextButton.setOnClickListener(new View.OnClickListener() {
@@ -117,6 +120,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
                         Fragment fragment = new ExtraInfoFragment();
                         Bundle b = new Bundle();
                         b.putString("label",mDeviceLabel.getText());
+                        b.putString("currency", currency);
                         fragment.setArguments(b);
                         fm.beginTransaction().add(R.id.container_summary, fragment).addToBackStack("extrainfo").commit();
                     }
@@ -125,6 +129,8 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
 
         mSummaryText = findViewById(R.id.summarytext);
         mImageView = findViewById(R.id.imageview);
+        updateImageView();
+
         mPictureButton = findViewById(R.id.picture_button);
         mPictureButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -133,8 +139,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
             }
         });
 
-        this.currency = getCurrency();
-        updateImageView();
+
 
 
         //Initialize the remote ML models:
@@ -284,7 +289,7 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
             @Override
             public void onSuccess(List<FirebaseVisionImageLabel> firebaseVisionImageLabels) {
                 if (firebaseVisionImageLabels.isEmpty()) {
-                    Toast.makeText(SummaryActivity.this, "Nothing detected, please take another picture", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(SummaryActivity.this, "Nothing detected, please take another picture", Toast.LENGTH_LONG).show();
                 }
                 for (FirebaseVisionImageLabel lab : firebaseVisionImageLabels) {
                     setSummaryText(createInitialDescription(lab, color));
@@ -316,12 +321,13 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         if (mImageView.getDrawable() == null) {
             Toast.makeText(this, "The description requires a photo", Toast.LENGTH_SHORT).show();
         } else {
-            //TODO: Hvis model er 'None' skal handles på en elegant måde i SimpleNLG
             SimpleNLG simpleNLG = new SimpleNLG();
             String entity = mDeviceLabel.getText();
             String[] parts = entity.split("-"); //the categories: parts[0] = laptop/phone, parts[1] = brand
             String desc = simpleNLG.getFullDescription(parts[0], parts[1], color, model, condition, price, currency);
             setSummaryText(desc);
+            mNextButton.setEnabled(false);
+            mNextButton.setAlpha(0.5f);
         }
     }
 
