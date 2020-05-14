@@ -1,5 +1,7 @@
 package android.mnah;
 
+import android.util.Log;
+
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -24,7 +26,7 @@ public class SimpleNLG {
         try {
             prop.load(getClass().getClassLoader().getResourceAsStream("lexicon.properties"));
         } catch (IOException e) {
-            System.out.println("Error creating lexicon, " + e);
+            Log.e("SimpleNLG","Error creating lexicon, " + e);
         }
 
         this.lexicon = new XMLLexicon(prop.getProperty("XML_FILENAME"));

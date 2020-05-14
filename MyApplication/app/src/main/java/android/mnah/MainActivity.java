@@ -47,7 +47,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v){
                 FragmentManager fm = getSupportFragmentManager();
-                //Fragment fragment = fm.findFragmentById(R.id.container);
                 Fragment fragment = new AboutFragment();
                 fm.beginTransaction().add(R.id.container, fragment).addToBackStack("about").commit();
 

@@ -92,7 +92,6 @@ public class ExtraInfoFragment extends Fragment {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 model = mModelSpinner.getSelectedItem().toString();
-                System.out.println("SELECTED MODEL WAS " + model);
             }
 
             @Override

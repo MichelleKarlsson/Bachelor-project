@@ -147,7 +147,8 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
         remoteColorModel = new FirebaseAutoMLRemoteModel.Builder("Colors_202043105816").build();
 
         FirebaseModelDownloadConditions conditions = new FirebaseModelDownloadConditions.Builder()
-                .build(); //add .requireWifi() before build here
+                .requireWifi()
+                .build();
         FirebaseModelManager.getInstance().download(remoteDeviceModel,conditions)
                 .addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
@@ -290,10 +291,13 @@ public class SummaryActivity extends AppCompatActivity implements ExtraInfoFragm
             public void onSuccess(List<FirebaseVisionImageLabel> firebaseVisionImageLabels) {
                 if (firebaseVisionImageLabels.isEmpty()) {
                     Toast.makeText(SummaryActivity.this, "Nothing detected, please take another picture", Toast.LENGTH_LONG).show();
+                    mNextButton.setEnabled(false);
+                    mNextButton.setAlpha(0.5f);
                 }
                 for (FirebaseVisionImageLabel lab : firebaseVisionImageLabels) {
                     setSummaryText(createInitialDescription(lab, color));
-
+                    mNextButton.setEnabled(true);
+                    mNextButton.setAlpha(1.0f);
                 }
             }
         }).addOnFailureListener(new OnFailureListener() {
